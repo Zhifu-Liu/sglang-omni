@@ -91,6 +91,26 @@ def test_speaker_embedding_rejected_on_unsupported_model() -> None:
     assert exc_info.value.param == "speaker_embedding"
 
 
+def test_speaker_embedding_rejects_non_base_task_type() -> None:
+    validator = make_validator()
+    payload = {
+        **BASE_REQUEST,
+        "speaker_embedding": EMBEDDING,
+        "task_type": "CustomVoice",
+    }
+    with pytest.raises(SpeechAPIError) as exc_info:
+        validator.parse_request(payload)
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.param == "task_type"
+
+
+def test_speaker_embedding_forces_base_task_in_tts_params() -> None:
+    validator = make_validator()
+    request = validator.parse_request({**BASE_REQUEST, "speaker_embedding": EMBEDDING})
+    tts_params = build_tts_params(request)
+    assert tts_params["task_type"] == "Base"
+
+
 def test_speaker_embedding_conflicts_with_ref_audio() -> None:
     validator = make_validator()
     request = validator.parse_request({**BASE_REQUEST, "speaker_embedding": EMBEDDING})
